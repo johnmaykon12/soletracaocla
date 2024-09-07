@@ -6,11 +6,14 @@
     <title>Spelling Test for Kids</title>
     <style>
         body {
-            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-family: 'Poppins', sans-serif;
             background-color: #f0f8ff;
             color: #333;
             text-align: center;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             animation: backgroundAnimation 20s infinite alternate;
         }
 
@@ -35,6 +38,7 @@
             cursor: pointer;
             margin: 10px;
             transition: transform 0.2s, box-shadow 0.2s;
+            outline: none;
         }
 
         button:hover {
@@ -89,7 +93,9 @@
             background-color: #87cefa;
             padding: 10px 15px;
             border-radius: 15px;
-            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             transition: transform 0.2s;
         }
 
@@ -112,7 +118,13 @@
             font-weight: bold;
         }
 
-        /* Animação do fundo */
+        .spelled-text {
+            margin-top: 5px;
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+        }
+
         @keyframes backgroundAnimation {
             0% {
                 filter: brightness(1);
@@ -122,7 +134,6 @@
             }
         }
 
-        /* Efeito de brilho no texto */
         @keyframes textGlow {
             0% {
                 text-shadow: 2px 2px 5px #ffdab9, 0 0 15px #ff6347;
@@ -132,7 +143,6 @@
             }
         }
 
-        /* Animação de sacudir para erro */
         @keyframes shake {
             0%, 100% {
                 transform: translateX(0);
@@ -145,7 +155,6 @@
             }
         }
 
-        /* Animação de pop para acerto */
         @keyframes pop {
             0% {
                 transform: scale(1);
@@ -164,30 +173,22 @@
 <h1>Teste de Soletração Divertido!</h1>
 <p>Clique no botão correspondente para ver as palavras de cada lista. Clique em uma palavra para ouvi-la e soletrá-la.</p>
 
-<!-- Botões para selecionar as listas -->
-<button id="list1-btn">Lista 1</button>
-<button id="list2-btn">Lista 2</button>
-<button id="list3-btn">Lista 3</button>
+<button id="list1-btn" aria-label="Selecionar Lista 1">Lista 1</button>
+<button id="list2-btn" aria-label="Selecionar Lista 2">Lista 2</button>
+<button id="list3-btn" aria-label="Selecionar Lista 3">Lista 3</button>
 
-<!-- Área para exibir palavras da lista selecionada -->
 <div id="word-list" class="word-list"></div>
 
-<!-- Botão para iniciar o teste e ouvir uma palavra -->
-<button id="start-btn">Iniciar Teste</button>
+<button id="start-btn" aria-label="Iniciar Teste">Iniciar Teste</button>
 
-<!-- Botão para iniciar a soletração -->
-<button id="spell-btn" disabled>Iniciar Soletração</button>
+<button id="spell-btn" disabled aria-label="Iniciar Soletração">Iniciar Soletração</button>
 
-<!-- Botão para finalizar a soletração -->
-<button id="end-btn" disabled>Finalizar Soletração</button>
+<button id="end-btn" disabled aria-label="Finalizar Soletração">Finalizar Soletração</button>
 
-<!-- Botão para ouvir a palavra sorteada novamente -->
-<button id="hear-word-btn" style="display: none;">Ouvir Palavra Sorteada Novamente</button>
+<button id="hear-word-btn" style="display: none;" aria-label="Ouvir Palavra Sorteada Novamente">Ouvir Palavra Sorteada Novamente</button>
 
-<!-- Botão para ouvir o resultado novamente -->
-<button id="repeat-result-btn" style="display: none;">Ouvir Resultado Novamente</button>
+<button id="repeat-result-btn" style="display: none;" aria-label="Ouvir Resultado Novamente">Ouvir Resultado Novamente</button>
 
-<!-- Exibição dos totais de acertos e erros -->
 <div id="scoreboard" class="scoreboard">
     Acertos: <span id="correct-count">0</span> | Erros: <span id="incorrect-count">0</span>
 </div>
@@ -195,17 +196,13 @@
 <p id="instruction"></p>
 <p id="result"></p>
 
-<!-- Exibição da palavra correta -->
 <p id="word-display" class="word-display"></p>
 
-<!-- Exibição da palavra sendo soletrada em tempo real -->
 <p id="live-spelling" class="live-spelling"></p>
 
-<!-- Indicador de escuta -->
 <p id="listening-indicator" class="listening-indicator"></p>
 
 <script>
-    // Listas de palavras
     const list1 = [
         "grandfather", "grandmother", "brother", "sister", "parents", "cousin", "siblings", "daughter", "son", "aunt", 
         "uncle", "mum", "dad", "thirteen", "fourteen", "twenty-two", "thirty-three", "forty-four", "fifty-five", 
@@ -236,7 +233,6 @@
         "read a book", "have breakfast"
     ];
 
-    // Seleciona elementos HTML
     const list1Btn = document.getElementById('list1-btn');
     const list2Btn = document.getElementById('list2-btn');
     const list3Btn = document.getElementById('list3-btn');
@@ -260,163 +256,168 @@
     let correctCount = 0;
     let incorrectCount = 0;
 
-    // Verifica se o navegador suporta a API de Fala e Reconhecimento de Fala
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const synth = window.speechSynthesis;
 
-    // Certifica que as vozes estão carregadas antes de tentar usar a síntese de fala
     let voices = [];
     synth.onvoiceschanged = () => {
         voices = synth.getVoices();
     };
 
+    let recognition;
     if (SpeechRecognition && synth) {
-        // Instância do reconhecimento de fala
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';  // Configura o idioma para inglês
-        recognition.interimResults = false;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US'; 
+        recognition.interimResults = true;
         recognition.maxAlternatives = 1;
 
-        // Quando o botão "Iniciar Soletração" é clicado
         spellBtn.addEventListener('click', () => {
-            spelledWord = ""; // Limpa a palavra soletrada
-            liveSpelling.textContent = ""; // Limpa o texto em tempo real
+            spelledWord = "";
+            liveSpelling.textContent = "";
             resultText.textContent = 'Soletrando... Clique em "Finalizar Soletração" quando terminar.';
-            listeningIndicator.textContent = "Escutando..."; // Mostra que está escutando
-            recognition.start(); // Inicia o reconhecimento de fala
-            endBtn.disabled = false; // Habilita o botão "Finalizar Soletração"
-            spellBtn.disabled = true; // Desabilita o botão "Iniciar Soletração" enquanto escuta
-            repeatResultBtn.style.display = "none"; // Esconde o botão de repetir resultado
+            listeningIndicator.textContent = "Escutando...";
+            recognition.start();
+            endBtn.disabled = false;
+            spellBtn.disabled = true;
+            repeatResultBtn.style.display = "none";
         });
 
-        // Quando o reconhecimento de fala captura um resultado
         recognition.addEventListener('result', (event) => {
-            let spokenText = event.results[0][0].transcript.toLowerCase().replace(/\s/g, "");
+            let spokenText = event.results[0][0].transcript.toLowerCase();
+            let currentLetter = spokenText.replace(/\s/g, "").slice(-1); // Get the last letter spoken
 
-            // Se a palavra completa for falada no final, desconsiderar
-            if (spokenText === chosenWord.toLowerCase()) {
-                isFinalWordSpoken = true;
-                return;
-            }
-
-            // Adiciona a letra ou parte da palavra soletrada
-            spelledWord += spokenText;
-            liveSpelling.textContent = spelledWord; // Exibe o texto sendo soletrado em tempo real
+            spelledWord += currentLetter;
+            liveSpelling.textContent = spelledWord; // Display the spelling in real time
         });
 
-        // Se houver erros no reconhecimento
         recognition.addEventListener('error', (event) => {
             resultText.textContent = `Erro no reconhecimento de fala: ${event.error}`;
-            listeningIndicator.textContent = ""; // Remove o indicador de escuta
+            listeningIndicator.textContent = "";
         });
 
-        // Continua escutando enquanto a soletração não for finalizada
         recognition.addEventListener('end', () => {
-            if (!endBtn.disabled && !isFinalWordSpoken) {  // Só continua se o usuário não tiver finalizado a soletração
+            if (!endBtn.disabled) {  // Only continue if the user hasn't finished spelling
                 recognition.start();
             } else {
-                listeningIndicator.textContent = ""; // Remove o indicador de escuta quando parar
+                listeningIndicator.textContent = ""; // Remove the listening indicator when stopping
             }
         });
 
-        // Quando o botão "Iniciar Teste" é clicado
         startBtn.addEventListener('click', () => {
-            // Escolhe uma palavra aleatória de uma lista combinada
             const combinedList = [...list1, ...list2, ...list3];
             chosenWord = combinedList[Math.floor(Math.random() * combinedList.length)];
 
-            // Fala a palavra em voz alta
             speakWord(chosenWord);
 
-            // Exibe instruções
             instructionText.textContent = 'Agora, clique em "Iniciar Soletração" e soletre a palavra...';
 
-            // Habilita o botão de soletração
             spellBtn.disabled = false;
-            hearWordBtn.style.display = "inline"; // Mostra o botão para ouvir a palavra sorteada
+            hearWordBtn.style.display = "inline"; // Show the button to hear the sorted word
         });
 
-        // Quando o botão "Finalizar Soletração" é clicado
         endBtn.addEventListener('click', () => {
-            recognition.stop(); // Para o reconhecimento de fala
-            checkSpelling(); // Verifica se a soletração está correta
-            endBtn.disabled = true; // Desabilita o botão após o fim da soletração
-            spellBtn.disabled = false; // Reabilita o botão "Iniciar Soletração"
-            listeningIndicator.textContent = ""; // Remove o indicador de escuta
+            recognition.stop(); // Stop speech recognition
+            checkSpelling(); // Check if the spelling is correct
+            endBtn.disabled = true; // Disable the button after finishing the spelling
+            spellBtn.disabled = false; // Re-enable the "Start Spelling" button
+            listeningIndicator.textContent = ""; // Remove the listening indicator
         });
 
-        // Quando o botão "Ouvir Palavra Sorteada" é clicado
         hearWordBtn.addEventListener('click', () => {
-            speakWord(chosenWord); // Fala a palavra sorteada novamente
+            speakWord(chosenWord); // Speak the sorted word again
+            setTimeout(() => spellWord(chosenWord), 1000); // Spell after the word is heard
         });
 
-        // Quando o botão "Ouvir Resultado Novamente" é clicado
         repeatResultBtn.addEventListener('click', () => {
-            speakResultMessage(`Correct spelling: ${chosenWord}. Your spelling: ${spelledWord}`); // Soletra ambas as palavras
+            speakResultMessage(`Correct spelling: ${chosenWord}. Your spelling: ${spelledWord}`); // Spell both words
         });
 
     } else {
         instructionText.textContent = 'Seu navegador não suporta a API de Fala ou Reconhecimento de Fala.';
     }
 
-    // Função para falar uma mensagem
     function speakMessage(message) {
         if (!synth.speaking) {
             const utterance = new SpeechSynthesisUtterance(message);
             utterance.lang = 'en-US';
-            utterance.voice = voices.find(voice => voice.lang === 'en-US') || null; // Usa uma voz em inglês
+            utterance.voice = voices.find(voice => voice.lang === 'en-US') || null;
             synth.speak(utterance);
         }
     }
 
-    // Função para falar o resultado e motivo do erro
     function speakResultMessage(message) {
         speakMessage(message);
     }
 
-    // Função para falar a palavra
     function speakWord(word) {
         speakMessage(word);
     }
 
-    // Função para soletrar a palavra
     function spellWord(word) {
-        const letters = word.split('');
-        for (const letter of letters) {
-            speakWord(letter);
+        const letters = word.toLowerCase().split('');
+        const letterPronunciations = {
+            'a': 'A', 'b': 'B', 'c': 'C', 'd': 'D', 'e': 'E', 'f': 'F', 
+            'g': 'G', 'h': 'H', 'i': 'I', 'j': 'J', 'k': 'K', 'l': 'L', 
+            'm': 'M', 'n': 'N', 'o': 'O', 'p': 'P', 'q': 'Q', 'r': 'R', 
+            's': 'S', 't': 'T', 'u': 'U', 'v': 'V', 'w': 'W', 
+            'x': 'X', 'y': 'Y', 'z': 'Z', '0': 'Zero', '1': 'One', '2': 'Two', 
+            '3': 'Three', '4': 'Four', '5': 'Five', '6': 'Six', '7': 'Seven', 
+            '8': 'Eight', '9': 'Nine', ' ': 'Space', '-': 'Dash', '\'': 'Apostrophe'
+        };
+
+        let currentIndex = 0;
+        let isSpelling = true;
+
+        function speakLetter() {
+            if (!isSpelling || currentIndex >= letters.length) return;
+
+            const char = letters[currentIndex];
+            const pronunciation = letterPronunciations[char] || char; 
+            const utterance = new SpeechSynthesisUtterance(pronunciation);
+            utterance.lang = 'en-US';
+
+            utterance.onend = () => {
+                currentIndex++;
+                speakLetter();
+            };
+
+            synth.speak(utterance);
         }
+
+        speakLetter();
+
+        return () => {
+            isSpelling = false;
+            synth.cancel();
+        };
     }
 
-    // Função para verificar a soletração
     function checkSpelling() {
         let message = `Você finalizou a soletração: "${spelledWord}"`;
 
-        // Exibe a palavra correta e a soletrada na tela com diferenças destacadas
         wordDisplay.innerHTML = `
             Palavra correta: <span class="highlight-correct">${highlightDifferences(chosenWord, spelledWord)}</span><br>
             Sua soletração: <span class="highlight-error">${highlightDifferences(spelledWord, chosenWord)}</span>
         `;
 
-        // Verifica se a palavra soletrada é igual à palavra escolhida
         if (spelledWord === chosenWord.toLowerCase()) {
             message += '\nParabéns! Você soletrou corretamente.';
             resultText.className = 'highlight-correct';
-            correctCount++; // Incrementa os acertos
-            correctCountDisplay.textContent = correctCount; // Atualiza a exibição de acertos
+            correctCount++;
+            correctCountDisplay.textContent = correctCount;
             speakResultMessage(`Correct spelling: ${chosenWord}. Your spelling: ${spelledWord}`);
         } else {
             message += `\nA soletração está incorreta.`;
             resultText.className = 'highlight-error';
-            incorrectCount++; // Incrementa os erros
-            incorrectCountDisplay.textContent = incorrectCount; // Atualiza a exibição de erros
+            incorrectCount++;
+            incorrectCountDisplay.textContent = incorrectCount;
             speakResultMessage(`Correct spelling: ${chosenWord}. Your spelling: ${spelledWord}`);
         }
         
-        resultText.innerHTML = message; // Usa innerHTML para renderizar o HTML corretamente
-        repeatResultBtn.style.display = "inline"; // Mostra o botão para repetir o resultado
+        resultText.innerHTML = message;
+        repeatResultBtn.style.display = "inline"; // Show the button to repeat the result
     }
 
-    // Função para destacar as diferenças entre as palavras
     function highlightDifferences(word1, word2) {
         let highlighted = "";
         let i = 0, j = 0;
@@ -440,22 +441,72 @@
         return highlighted;
     }
 
-    // Função para listar palavras de uma lista
     function displayWords(wordArray) {
-        wordListDiv.innerHTML = ''; // Limpa a lista de palavras
+        wordListDiv.innerHTML = ''; // Clear the word list
         wordArray.forEach(word => {
             const wordItem = document.createElement('div');
             wordItem.className = 'word-item';
-            wordItem.textContent = word;
-            wordItem.onclick = () => {
-                speakWord(word); // Fala a palavra
-                spellWord(word); // Soletra a palavra
-            };
+            const spelledTextElement = document.createElement('span');
+            spelledTextElement.className = 'spelled-text'; // Contêiner para mostrar o texto soletrado
+
+            wordItem.innerHTML = `
+                <span>${word}</span>
+                <button>Ouvir</button>
+                <button>Falar</button>
+            `;
+
+            const listenBtn = wordItem.querySelector('button:nth-child(2)');
+            const speakBtn = wordItem.querySelector('button:nth-child(3)');
+
+            listenBtn.addEventListener('click', () => {
+                speakWord(word);
+                setTimeout(() => spellWord(word), 1000); // Espera 1 segundo antes de começar a soletrar
+            });
+
+            speakBtn.addEventListener('click', () => {
+                spelledTextElement.textContent = ''; // Limpa o texto anterior
+                startRecognition(spelledTextElement); // Inicia o reconhecimento de fala
+            });
+
+            wordItem.appendChild(spelledTextElement);
             wordListDiv.appendChild(wordItem);
         });
     }
 
-    // Adiciona eventos aos botões de listas
+    function startRecognition(spelledTextElement) {
+        spelledWord = ""; // Reseta a variável de soletração
+        recognition.start();
+
+        const letterMappings = {
+            'alpha': 'A', 'bravo': 'B', 'charlie': 'C', 'delta': 'D', 'echo': 'E', 'foxtrot': 'F',
+            'golf': 'G', 'hotel': 'H', 'india': 'I', 'juliett': 'J', 'kilo': 'K', 'lima': 'L',
+            'mike': 'M', 'november': 'N', 'oscar': 'O', 'papa': 'P', 'quebec': 'Q', 'romeo': 'R',
+            'sierra': 'S', 'tango': 'T', 'uniform': 'U', 'victor': 'V', 'whiskey': 'W',
+            'x-ray': 'X', 'yankee': 'Y', 'zulu': 'Z'
+        };
+
+        recognition.onresult = (event) => {
+            recognition.stop(); // Para após capturar um resultado
+            let spokenText = event.results[0][0].transcript.toLowerCase().trim();
+
+            // Se é uma letra única
+            if (spokenText.length === 1 && /[a-z]/.test(spokenText)) {
+                spelledWord += spokenText.toUpperCase();
+            } else if (letterMappings[spokenText]) { // Se é uma letra falada (fonética NATO)
+                spelledWord += letterMappings[spokenText];
+            }
+
+            spelledTextElement.textContent = spelledWord; // Mostra o texto soletrado em tempo real
+
+            // Reinicia o reconhecimento para capturar a próxima letra
+            setTimeout(() => recognition.start(), 500);
+        };
+
+        recognition.onerror = (event) => {
+            spelledTextElement.textContent = `Erro no reconhecimento de fala: ${event.error}`;
+        };
+    }
+
     list1Btn.addEventListener('click', () => displayWords(list1));
     list2Btn.addEventListener('click', () => displayWords(list2));
     list3Btn.addEventListener('click', () => displayWords(list3));
