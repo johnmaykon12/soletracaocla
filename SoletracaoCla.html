@@ -181,6 +181,9 @@
 <!-- Botão para finalizar a soletração -->
 <button id="end-btn" disabled>Finalizar Soletração</button>
 
+<!-- Botão para ouvir a palavra sorteada novamente -->
+<button id="hear-word-btn" style="display: none;">Ouvir Palavra Sorteada Novamente</button>
+
 <!-- Botão para ouvir o resultado novamente -->
 <button id="repeat-result-btn" style="display: none;">Ouvir Resultado Novamente</button>
 
@@ -241,6 +244,7 @@
     const startBtn = document.getElementById('start-btn');
     const spellBtn = document.getElementById('spell-btn');
     const endBtn = document.getElementById('end-btn');
+    const hearWordBtn = document.getElementById('hear-word-btn');
     const repeatResultBtn = document.getElementById('repeat-result-btn');
     const instructionText = document.getElementById('instruction');
     const resultText = document.getElementById('result');
@@ -329,6 +333,7 @@
 
             // Habilita o botão de soletração
             spellBtn.disabled = false;
+            hearWordBtn.style.display = "inline"; // Mostra o botão para ouvir a palavra sorteada
         });
 
         // Quando o botão "Finalizar Soletração" é clicado
@@ -340,9 +345,14 @@
             listeningIndicator.textContent = ""; // Remove o indicador de escuta
         });
 
+        // Quando o botão "Ouvir Palavra Sorteada" é clicado
+        hearWordBtn.addEventListener('click', () => {
+            speakWord(chosenWord); // Fala a palavra sorteada novamente
+        });
+
         // Quando o botão "Ouvir Resultado Novamente" é clicado
         repeatResultBtn.addEventListener('click', () => {
-            speakResultMessage(resultText.textContent); // Fala o resultado novamente
+            speakResultMessage(`Correct spelling: ${chosenWord}. Your spelling: ${spelledWord}`); // Soletra ambas as palavras
         });
 
     } else {
@@ -381,8 +391,11 @@
     function checkSpelling() {
         let message = `Você finalizou a soletração: "${spelledWord}"`;
 
-        // Exibe a palavra correta na tela
-        wordDisplay.innerHTML = `Palavra correta: "${chosenWord}"`;
+        // Exibe a palavra correta e a soletrada na tela com diferenças destacadas
+        wordDisplay.innerHTML = `
+            Palavra correta: <span class="highlight-correct">${highlightDifferences(chosenWord, spelledWord)}</span><br>
+            Sua soletração: <span class="highlight-error">${highlightDifferences(spelledWord, chosenWord)}</span>
+        `;
 
         // Verifica se a palavra soletrada é igual à palavra escolhida
         if (spelledWord === chosenWord.toLowerCase()) {
@@ -390,15 +403,13 @@
             resultText.className = 'highlight-correct';
             correctCount++; // Incrementa os acertos
             correctCountDisplay.textContent = correctCount; // Atualiza a exibição de acertos
-            speakResultMessage('Congratulations! You spelled the word correctly.');
+            speakResultMessage(`Correct spelling: ${chosenWord}. Your spelling: ${spelledWord}`);
         } else {
-            const differences = highlightDifferences(chosenWord, spelledWord);
-            message += `\nA soletração está incorreta. A palavra correta é "${chosenWord}".`;
-            message += `\nDiferenças encontradas: ${differences}`;
+            message += `\nA soletração está incorreta.`;
             resultText.className = 'highlight-error';
             incorrectCount++; // Incrementa os erros
             incorrectCountDisplay.textContent = incorrectCount; // Atualiza a exibição de erros
-            speakResultMessage(`The spelling is incorrect. The correct word is ${chosenWord}. The differences are: ${differences}`);
+            speakResultMessage(`Correct spelling: ${chosenWord}. Your spelling: ${spelledWord}`);
         }
         
         resultText.innerHTML = message; // Usa innerHTML para renderizar o HTML corretamente
@@ -406,22 +417,21 @@
     }
 
     // Função para destacar as diferenças entre as palavras
-    function highlightDifferences(correctWord, spelledWord) {
+    function highlightDifferences(word1, word2) {
         let highlighted = "";
         let i = 0, j = 0;
 
-        while (i < correctWord.length || j < spelledWord.length) {
-            if (i < correctWord.length && j < spelledWord.length && correctWord[i] === spelledWord[j]) {
-                highlighted += correctWord[i];
+        while (i < word1.length || j < word2.length) {
+            if (i < word1.length && j < word2.length && word1[i] === word2[j]) {
+                highlighted += word1[i];
                 i++;
                 j++;
             } else {
-                if (i < correctWord.length) {
-                    highlighted += `<span style="color: red; font-weight: bold;">${correctWord[i]}</span>`;
+                if (i < word1.length) {
+                    highlighted += `<span style="color: red; font-weight: bold;">${word1[i]}</span>`;
                     i++;
                 }
-                if (j < spelledWord.length) {
-                    highlighted += `<span style="color: blue; font-weight: bold;">${spelledWord[j]}</span>`;
+                if (j < word2.length) {
                     j++;
                 }
             }
