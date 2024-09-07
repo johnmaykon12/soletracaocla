@@ -70,6 +70,13 @@
             font-weight: bold;
         }
 
+        .live-spelling {
+            margin-top: 10px;
+            font-size: 22px;
+            color: #555;
+            font-weight: bold;
+        }
+
         .word-list {
             margin-top: 20px;
             display: flex;
@@ -89,6 +96,20 @@
         .word-item:hover {
             transform: scale(1.05);
             background-color: #00bfff;
+        }
+
+        .listening-indicator {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #ff4500;
+            font-weight: bold;
+        }
+
+        .scoreboard {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #333;
+            font-weight: bold;
         }
 
         /* Animação do fundo */
@@ -160,11 +181,25 @@
 <!-- Botão para finalizar a soletração -->
 <button id="end-btn" disabled>Finalizar Soletração</button>
 
+<!-- Botão para ouvir o resultado novamente -->
+<button id="repeat-result-btn" style="display: none;">Ouvir Resultado Novamente</button>
+
+<!-- Exibição dos totais de acertos e erros -->
+<div id="scoreboard" class="scoreboard">
+    Acertos: <span id="correct-count">0</span> | Erros: <span id="incorrect-count">0</span>
+</div>
+
 <p id="instruction"></p>
 <p id="result"></p>
 
 <!-- Exibição da palavra correta -->
 <p id="word-display" class="word-display"></p>
+
+<!-- Exibição da palavra sendo soletrada em tempo real -->
+<p id="live-spelling" class="live-spelling"></p>
+
+<!-- Indicador de escuta -->
+<p id="listening-indicator" class="listening-indicator"></p>
 
 <script>
     // Listas de palavras
@@ -206,16 +241,30 @@
     const startBtn = document.getElementById('start-btn');
     const spellBtn = document.getElementById('spell-btn');
     const endBtn = document.getElementById('end-btn');
+    const repeatResultBtn = document.getElementById('repeat-result-btn');
     const instructionText = document.getElementById('instruction');
     const resultText = document.getElementById('result');
     const wordDisplay = document.getElementById('word-display');
+    const liveSpelling = document.getElementById('live-spelling');
+    const listeningIndicator = document.getElementById('listening-indicator');
+    const correctCountDisplay = document.getElementById('correct-count');
+    const incorrectCountDisplay = document.getElementById('incorrect-count');
 
     let chosenWord = "";
     let spelledWord = "";
+    let isFinalWordSpoken = false;
+    let correctCount = 0;
+    let incorrectCount = 0;
 
     // Verifica se o navegador suporta a API de Fala e Reconhecimento de Fala
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const synth = window.speechSynthesis;
+
+    // Certifica que as vozes estão carregadas antes de tentar usar a síntese de fala
+    let voices = [];
+    synth.onvoiceschanged = () => {
+        voices = synth.getVoices();
+    };
 
     if (SpeechRecognition && synth) {
         // Instância do reconhecimento de fala
@@ -227,28 +276,42 @@
         // Quando o botão "Iniciar Soletração" é clicado
         spellBtn.addEventListener('click', () => {
             spelledWord = ""; // Limpa a palavra soletrada
+            liveSpelling.textContent = ""; // Limpa o texto em tempo real
             resultText.textContent = 'Soletrando... Clique em "Finalizar Soletração" quando terminar.';
+            listeningIndicator.textContent = "Escutando..."; // Mostra que está escutando
             recognition.start(); // Inicia o reconhecimento de fala
             endBtn.disabled = false; // Habilita o botão "Finalizar Soletração"
+            spellBtn.disabled = true; // Desabilita o botão "Iniciar Soletração" enquanto escuta
+            repeatResultBtn.style.display = "none"; // Esconde o botão de repetir resultado
         });
 
         // Quando o reconhecimento de fala captura um resultado
         recognition.addEventListener('result', (event) => {
             let spokenText = event.results[0][0].transcript.toLowerCase().replace(/\s/g, "");
-            // Adiciona a letra ou parte da palavra soletrada à variável `spelledWord`
+
+            // Se a palavra completa for falada no final, desconsiderar
+            if (spokenText === chosenWord.toLowerCase()) {
+                isFinalWordSpoken = true;
+                return;
+            }
+
+            // Adiciona a letra ou parte da palavra soletrada
             spelledWord += spokenText;
-            resultText.textContent = `Você soletrou até agora: "${spelledWord}"`;
+            liveSpelling.textContent = spelledWord; // Exibe o texto sendo soletrado em tempo real
         });
 
         // Se houver erros no reconhecimento
         recognition.addEventListener('error', (event) => {
             resultText.textContent = `Erro no reconhecimento de fala: ${event.error}`;
+            listeningIndicator.textContent = ""; // Remove o indicador de escuta
         });
 
         // Continua escutando enquanto a soletração não for finalizada
         recognition.addEventListener('end', () => {
-            if (!endBtn.disabled) {  // Só continua se o usuário não tiver finalizado a soletração
+            if (!endBtn.disabled && !isFinalWordSpoken) {  // Só continua se o usuário não tiver finalizado a soletração
                 recognition.start();
+            } else {
+                listeningIndicator.textContent = ""; // Remove o indicador de escuta quando parar
             }
         });
 
@@ -273,6 +336,13 @@
             recognition.stop(); // Para o reconhecimento de fala
             checkSpelling(); // Verifica se a soletração está correta
             endBtn.disabled = true; // Desabilita o botão após o fim da soletração
+            spellBtn.disabled = false; // Reabilita o botão "Iniciar Soletração"
+            listeningIndicator.textContent = ""; // Remove o indicador de escuta
+        });
+
+        // Quando o botão "Ouvir Resultado Novamente" é clicado
+        repeatResultBtn.addEventListener('click', () => {
+            speakResultMessage(resultText.textContent); // Fala o resultado novamente
         });
 
     } else {
@@ -281,16 +351,22 @@
 
     // Função para falar uma mensagem
     function speakMessage(message) {
-        const utterance = new SpeechSynthesisUtterance(message);
-        utterance.lang = 'en-US';
-        synth.speak(utterance);
+        if (!synth.speaking) {
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.lang = 'en-US';
+            utterance.voice = voices.find(voice => voice.lang === 'en-US') || null; // Usa uma voz em inglês
+            synth.speak(utterance);
+        }
+    }
+
+    // Função para falar o resultado e motivo do erro
+    function speakResultMessage(message) {
+        speakMessage(message);
     }
 
     // Função para falar a palavra
     function speakWord(word) {
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.lang = 'en-US';
-        synth.speak(utterance);
+        speakMessage(word);
     }
 
     // Função para soletrar a palavra
@@ -306,23 +382,27 @@
         let message = `Você finalizou a soletração: "${spelledWord}"`;
 
         // Exibe a palavra correta na tela
-        wordDisplay.textContent = `Palavra correta: "${chosenWord}"`;
+        wordDisplay.innerHTML = `Palavra correta: "${chosenWord}"`;
 
         // Verifica se a palavra soletrada é igual à palavra escolhida
         if (spelledWord === chosenWord.toLowerCase()) {
             message += '\nParabéns! Você soletrou corretamente.';
-            speakMessage('Congratulations! You spelled the word correctly.');
-            resultText.classList.add('highlight-correct');
+            resultText.className = 'highlight-correct';
+            correctCount++; // Incrementa os acertos
+            correctCountDisplay.textContent = correctCount; // Atualiza a exibição de acertos
+            speakResultMessage('Congratulations! You spelled the word correctly.');
         } else {
+            const differences = highlightDifferences(chosenWord, spelledWord);
             message += `\nA soletração está incorreta. A palavra correta é "${chosenWord}".`;
-            speakMessage(`The spelling is incorrect. The correct word is ${chosenWord}.`);
-            spellWord(chosenWord); // Soletra a palavra correta
-            resultText.classList.add('highlight-error');
-            // Mostra as diferenças entre a palavra correta e a palavra soletrada
-            resultText.innerHTML += `<br><strong>Diferenças:</strong><br>${highlightDifferences(chosenWord, spelledWord)}`;
+            message += `\nDiferenças encontradas: ${differences}`;
+            resultText.className = 'highlight-error';
+            incorrectCount++; // Incrementa os erros
+            incorrectCountDisplay.textContent = incorrectCount; // Atualiza a exibição de erros
+            speakResultMessage(`The spelling is incorrect. The correct word is ${chosenWord}. The differences are: ${differences}`);
         }
         
-        resultText.textContent = message;
+        resultText.innerHTML = message; // Usa innerHTML para renderizar o HTML corretamente
+        repeatResultBtn.style.display = "inline"; // Mostra o botão para repetir o resultado
     }
 
     // Função para destacar as diferenças entre as palavras
