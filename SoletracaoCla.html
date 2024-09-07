@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spelling Test for Kids</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            animation: backgroundAnimation 20s infinite alternate;
+        }
+
+        h1 {
+            color: #ff6347;
+            font-size: 3em;
+            text-shadow: 2px 2px #ffdab9;
+            animation: textGlow 2s infinite alternate;
+        }
+
+        p {
+            font-size: 18px;
+        }
+
+        button {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 105, 180, 0.6);
+        }
+
+        button:disabled {
+            background-color: #d3d3d3;
+            cursor: not-allowed;
+        }
+
+        #instruction, #result {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .highlight-error {
+            color: red;
+            font-weight: bold;
+            animation: shake 0.5s;
+        }
+
+        .highlight-correct {
+            color: green;
+            font-weight: bold;
+            animation: pop 0.5s;
+        }
+
+        .word-display {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .word-list {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .word-item {
+            background-color: #87cefa;
+            padding: 10px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .word-item:hover {
+            transform: scale(1.05);
+            background-color: #00bfff;
+        }
+
+        /* Animação do fundo */
+        @keyframes backgroundAnimation {
+            0% {
+                filter: brightness(1);
+            }
+            100% {
+                filter: brightness(1.1);
+            }
+        }
+
+        /* Efeito de brilho no texto */
+        @keyframes textGlow {
+            0% {
+                text-shadow: 2px 2px 5px #ffdab9, 0 0 15px #ff6347;
+            }
+            100% {
+                text-shadow: 2px 2px 10px #ffdab9, 0 0 20px #ff6347;
+            }
+        }
+
+        /* Animação de sacudir para erro */
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            20%, 60% {
+                transform: translateX(-10px);
+            }
+            40%, 80% {
+                transform: translateX(10px);
+            }
+        }
+
+        /* Animação de pop para acerto */
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Teste de Soletração Divertido!</h1>
+<p>Clique no botão correspondente para ver as palavras de cada lista. Clique em uma palavra para ouvi-la e soletrá-la.</p>
+
+<!-- Botões para selecionar as listas -->
+<button id="list1-btn">Lista 1</button>
+<button id="list2-btn">Lista 2</button>
+<button id="list3-btn">Lista 3</button>
+
+<!-- Área para exibir palavras da lista selecionada -->
+<div id="word-list" class="word-list"></div>
+
+<!-- Botão para iniciar o teste e ouvir uma palavra -->
+<button id="start-btn">Iniciar Teste</button>
+
+<!-- Botão para iniciar a soletração -->
+<button id="spell-btn" disabled>Iniciar Soletração</button>
+
+<!-- Botão para finalizar a soletração -->
+<button id="end-btn" disabled>Finalizar Soletração</button>
+
+<p id="instruction"></p>
+<p id="result"></p>
+
+<!-- Exibição da palavra correta -->
+<p id="word-display" class="word-display"></p>
+
+<script>
+    // Listas de palavras
+    const list1 = [
+        "grandfather", "grandmother", "brother", "sister", "parents", "cousin", "siblings", "daughter", "son", "aunt", 
+        "uncle", "mum", "dad", "thirteen", "fourteen", "twenty-two", "thirty-three", "forty-four", "fifty-five", 
+        "sixty-six", "seventy-seven", "eighty-eight", "ninety-nine", "one hundred", "one hundred and twelve", 
+        "an English book", "an alarm clock", "whiteboard", "wallet", "pear", "plum", "lychee", "pineapple", 
+        "strawberry", "watermelon", "They’re cherries", "They’re peaches", "tomato soup", "fried chicken", 
+        "baked potato", "chocolate muffin", "sausages", "mashed potatoes", "roast beef", "grilled cheese sandwich", 
+        "a glass of soda", "a bowl of fruit salad", "a jug of juice", "spaghetti with meatballs", "lime cupcake"
+    ];
+
+    const list2 = [
+        "purple blouse", "brown boots", "white cap", "pink dress", "flip flops", "pyjamas", "polo shirt", "green scarf", 
+        "grey shorts", "red skirt", "yellow socks", "blue sweater", "sweatshirt", "tablet", "It’s his watch", 
+        "They’re her jackets", "tablet", "speakers", "earphones", "laptop", "smartwatch", "scooter", "skateboard", 
+        "tent", "bedroom", "bathroom", "sitting room", "dining room", "kitchen", "hall", "attic", "laundry", "garage", 
+        "stairs", "curtains", "cushion", "fridge", "microwave", "shelf", "shower", "stove", "toilet", "wardrobe", 
+        "lamp", "There’s a fridge", "There isn’t a ball", "there aren’t", "Yes, there are", "some chairs", "any beds"
+    ];
+
+    const list3 = [
+        "Argentinian", "Australian", "Brazilian", "Canadian", "Chinese", "France", "Germany", "Greece", "Greek", 
+        "Italian", "Japanese", "Mexican", "New Zealand", "Portuguese", "Russian", "South African", "Spain", "Spanish", 
+        "The United Kingdom", "British", "The United States", "Where are you from?", "I’m from Germany.", 
+        "She’s American.", "They’re French.", "earache", "backache", "broken arm", "broken leg", "headache", 
+        "sore throat", "stomachache", "toothache", "shoulder", "curly hair", "wavy hair", "straight hair", 
+        "She’s got green eyes.", "I’ve got brown hair.", "What’s the matter?", "He’s got a cold.", "heavy bag", 
+        "light rucksack", "do homework", "go to school", "listen to music", "take a shower", "play video games", 
+        "read a book", "have breakfast"
+    ];
+
+    // Seleciona elementos HTML
+    const list1Btn = document.getElementById('list1-btn');
+    const list2Btn = document.getElementById('list2-btn');
+    const list3Btn = document.getElementById('list3-btn');
+    const wordListDiv = document.getElementById('word-list');
+    const startBtn = document.getElementById('start-btn');
+    const spellBtn = document.getElementById('spell-btn');
+    const endBtn = document.getElementById('end-btn');
+    const instructionText = document.getElementById('instruction');
+    const resultText = document.getElementById('result');
+    const wordDisplay = document.getElementById('word-display');
+
+    let chosenWord = "";
+    let spelledWord = "";
+
+    // Verifica se o navegador suporta a API de Fala e Reconhecimento de Fala
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const synth = window.speechSynthesis;
+
+    if (SpeechRecognition && synth) {
+        // Instância do reconhecimento de fala
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';  // Configura o idioma para inglês
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        // Quando o botão "Iniciar Soletração" é clicado
+        spellBtn.addEventListener('click', () => {
+            spelledWord = ""; // Limpa a palavra soletrada
+            resultText.textContent = 'Soletrando... Clique em "Finalizar Soletração" quando terminar.';
+            recognition.start(); // Inicia o reconhecimento de fala
+            endBtn.disabled = false; // Habilita o botão "Finalizar Soletração"
+        });
+
+        // Quando o reconhecimento de fala captura um resultado
+        recognition.addEventListener('result', (event) => {
+            let spokenText = event.results[0][0].transcript.toLowerCase().replace(/\s/g, "");
+            // Adiciona a letra ou parte da palavra soletrada à variável `spelledWord`
+            spelledWord += spokenText;
+            resultText.textContent = `Você soletrou até agora: "${spelledWord}"`;
+        });
+
+        // Se houver erros no reconhecimento
+        recognition.addEventListener('error', (event) => {
+            resultText.textContent = `Erro no reconhecimento de fala: ${event.error}`;
+        });
+
+        // Continua escutando enquanto a soletração não for finalizada
+        recognition.addEventListener('end', () => {
+            if (!endBtn.disabled) {  // Só continua se o usuário não tiver finalizado a soletração
+                recognition.start();
+            }
+        });
+
+        // Quando o botão "Iniciar Teste" é clicado
+        startBtn.addEventListener('click', () => {
+            // Escolhe uma palavra aleatória de uma lista combinada
+            const combinedList = [...list1, ...list2, ...list3];
+            chosenWord = combinedList[Math.floor(Math.random() * combinedList.length)];
+
+            // Fala a palavra em voz alta
+            speakWord(chosenWord);
+
+            // Exibe instruções
+            instructionText.textContent = 'Agora, clique em "Iniciar Soletração" e soletre a palavra...';
+
+            // Habilita o botão de soletração
+            spellBtn.disabled = false;
+        });
+
+        // Quando o botão "Finalizar Soletração" é clicado
+        endBtn.addEventListener('click', () => {
+            recognition.stop(); // Para o reconhecimento de fala
+            checkSpelling(); // Verifica se a soletração está correta
+            endBtn.disabled = true; // Desabilita o botão após o fim da soletração
+        });
+
+    } else {
+        instructionText.textContent = 'Seu navegador não suporta a API de Fala ou Reconhecimento de Fala.';
+    }
+
+    // Função para falar uma mensagem
+    function speakMessage(message) {
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.lang = 'en-US';
+        synth.speak(utterance);
+    }
+
+    // Função para falar a palavra
+    function speakWord(word) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        synth.speak(utterance);
+    }
+
+    // Função para soletrar a palavra
+    function spellWord(word) {
+        const letters = word.split('');
+        for (const letter of letters) {
+            speakWord(letter);
+        }
+    }
+
+    // Função para verificar a soletração
+    function checkSpelling() {
+        let message = `Você finalizou a soletração: "${spelledWord}"`;
+
+        // Exibe a palavra correta na tela
+        wordDisplay.textContent = `Palavra correta: "${chosenWord}"`;
+
+        // Verifica se a palavra soletrada é igual à palavra escolhida
+        if (spelledWord === chosenWord.toLowerCase()) {
+            message += '\nParabéns! Você soletrou corretamente.';
+            speakMessage('Congratulations! You spelled the word correctly.');
+            resultText.classList.add('highlight-correct');
+        } else {
+            message += `\nA soletração está incorreta. A palavra correta é "${chosenWord}".`;
+            speakMessage(`The spelling is incorrect. The correct word is ${chosenWord}.`);
+            spellWord(chosenWord); // Soletra a palavra correta
+            resultText.classList.add('highlight-error');
+            // Mostra as diferenças entre a palavra correta e a palavra soletrada
+            resultText.innerHTML += `<br><strong>Diferenças:</strong><br>${highlightDifferences(chosenWord, spelledWord)}`;
+        }
+        
+        resultText.textContent = message;
+    }
+
+    // Função para destacar as diferenças entre as palavras
+    function highlightDifferences(correctWord, spelledWord) {
+        let highlighted = "";
+        let i = 0, j = 0;
+
+        while (i < correctWord.length || j < spelledWord.length) {
+            if (i < correctWord.length && j < spelledWord.length && correctWord[i] === spelledWord[j]) {
+                highlighted += correctWord[i];
+                i++;
+                j++;
+            } else {
+                if (i < correctWord.length) {
+                    highlighted += `<span style="color: red; font-weight: bold;">${correctWord[i]}</span>`;
+                    i++;
+                }
+                if (j < spelledWord.length) {
+                    highlighted += `<span style="color: blue; font-weight: bold;">${spelledWord[j]}</span>`;
+                    j++;
+                }
+            }
+        }
+
+        return highlighted;
+    }
+
+    // Função para listar palavras de uma lista
+    function displayWords(wordArray) {
+        wordListDiv.innerHTML = ''; // Limpa a lista de palavras
+        wordArray.forEach(word => {
+            const wordItem = document.createElement('div');
+            wordItem.className = 'word-item';
+            wordItem.textContent = word;
+            wordItem.onclick = () => {
+                speakWord(word); // Fala a palavra
+                spellWord(word); // Soletra a palavra
+            };
+            wordListDiv.appendChild(wordItem);
+        });
+    }
+
+    // Adiciona eventos aos botões de listas
+    list1Btn.addEventListener('click', () => displayWords(list1));
+    list2Btn.addEventListener('click', () => displayWords(list2));
+    list3Btn.addEventListener('click', () => displayWords(list3));
+
+</script>
+
+</body>
+</html>
